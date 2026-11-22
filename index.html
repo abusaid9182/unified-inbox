@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>এক ইনবক্স</title>
+<style>
+:root{--bg:#f5f6f4;--surface:#fff;--ink:#17201c;--muted:#6b7670;--line:#e1e5e2;--accent:#1f6f54;--me:#1f6f54;--in:#eceeed;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#121614;--surface:#1b211e;--ink:#eef1ef;--muted:#929c96;--line:#2a322e;--accent:#4cc39a;--me:#2c8a6b;--in:#27302c;color-scheme:dark}}
+html,body{height:100%;margin:0}
+*,*::before,*::after{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:"Hind Siliguri","Noto Sans Bengali",system-ui,sans-serif;font-size:16px;overflow:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#app{height:100%;display:flex;flex-direction:column;max-width:900px;margin:0 auto;background:var(--surface)}
+.view{display:none;flex:1;min-height:0;flex-direction:column}
+.view.on{display:flex}
+header{padding:14px 16px 8px}
+h1{font-size:22px;margin:0 0 10px}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px}
+.tab{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 13px;border-radius:999px;font:inherit;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.tab.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.list{flex:1;overflow-y:auto;border-top:1px solid var(--line)}
+.row{display:flex;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line);cursor:pointer;align-items:center}
+.row:hover{background:var(--bg)}
+.av{position:relative;width:46px;height:46px;border-radius:50%;background:var(--in);display:grid;place-items:center;font-weight:600;flex:none}
+.av .lg{position:absolute;right:-3px;bottom:-3px;display:flex;border:2px solid var(--surface);border-radius:50%;background:var(--surface)}
+.meta{flex:1;min-width:0}
+.top{display:flex;justify-content:space-between;gap:8px}
+.name{font-weight:600}
+.time{font-size:12px;color:var(--muted)}
+.prev{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:14px;margin-top:2px}
+.prev span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{background:var(--accent);color:var(--surface);border-radius:999px;font-size:12px;min-width:20px;height:20px;display:grid;place-items:center;padding:0 6px;flex:none}
+.unread .prev span:first-child{color:var(--ink);font-weight:600}
+.chead{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.back{border:0;background:none;color:var(--ink);font-size:24px;cursor:pointer;padding:4px 8px}
+.plat{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.msgs{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.b{max-width:78%;padding:9px 13px;border-radius:16px;line-height:1.45;font-size:15px;word-wrap:break-word;white-space:pre-wrap}
+.in{background:var(--in);align-self:flex-start;border-bottom-left-radius:4px}
+.out{background:var(--me);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.compose{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line);background:var(--surface)}
+.compose input,.login input{flex:1;font:inherit;font-size:16px;padding:11px 14px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);outline:none}
+.compose input:focus,.login input:focus{border-color:var(--accent)}
+.send{border:0;background:var(--accent);color:var(--surface);font:inherit;font-weight:600;padding:0 18px;border-radius:999px;cursor:pointer;min-height:44px}
+.empty{padding:40px 16px;text-align:center;color:var(--muted)}
+.login{margin:auto;width:min(340px,90%);display:flex;flex-direction:column;gap:12px}
+.login h1{margin:0}
+.err{color:#c0392b;font-size:14px;min-height:20px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs><linearGradient id="igg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#feda75"/><stop offset=".4" stop-color="#d62976"/><stop offset="1" stop-color="#4f5bd5"/></linearGradient></defs></svg>
+<div id="app">
+  <section class="view" id="loginView">
+    <div class="login">
+      <h1>এক ইনবক্স</h1>
+      <input id="pw" type="password" placeholder="পাসওয়ার্ড" autocomplete="current-password">
+      <button class="send" id="loginBtn">ঢুকুন</button>
+      <div class="err" id="err"></div>
+    </div>
+  </section>
+  <section class="view" id="listView">
+    <header><h1>সব মেসেজ</h1><div class="tabs" id="tabs"></div></header>
+    <div class="list" id="list"></div>
+  </section>
+  <section class="view" id="chatView">
+    <div class="chead">
+      <button class="back" id="back" aria-label="ফিরে যান">‹</button>
+      <div class="meta"><div class="name" id="cname"></div><div class="plat" id="cplat"></div></div>
+    </div>
+    <div class="msgs" id="msgs"></div>
+    <div class="compose">
+      <input id="inp" placeholder="রিপ্লাই লিখুন…" autocomplete="off">
+      <button class="send" id="send">পাঠান</button>
+    </div>
+  </section>
+</div>
+<script>
+var P={all:"সব",fb:"মেসেঞ্জার",ig:"ইনস্টাগ্রাম",wa:"হোয়াটসঅ্যাপ"};
+var G={
+fb:'<circle cx="12" cy="12" r="12" fill="#1877f2"/><path d="M12 5C8.1 5 5 7.9 5 11.5c0 2 1 3.8 2.6 5V19l2.4-1.3c.6.2 1.3.3 2 .3 3.9 0 7-2.9 7-6.5S15.9 5 12 5z" fill="#fff"/><path d="M8 13.4l2.6-2.8 1.9 1.8 2.5-1.8-2.6 2.8-1.9-1.8z" fill="#1877f2"/>',
+wa:'<circle cx="12" cy="12" r="12" fill="#1fa855"/><path d="M12 5.5a6.5 6.5 0 0 0-5.6 9.8L5.5 18.5l3.3-.9A6.5 6.5 0 1 0 12 5.5z" fill="none" stroke="#fff" stroke-width="1.6"/><path d="M9.8 9.2c.3 2 2 3.800 4.100 4.500l.9-1-1.500-.8-.6.600c-.8-.4-1.500-1.100-1.900-1.900l.6-.6-.8-1.500z" fill="#fff"/>',
+ig:'<rect width="24" height="24" rx="6.5" fill="url(#igg)"/><rect x="6" y="6" width="12" height="12" rx="3.5" fill="none" stroke="#fff" stroke-width="1.7"/><circle cx="12" cy="12" r="2.9" fill="none" stroke="#fff" stroke-width="1.7"/><circle cx="16" cy="8" r="1" fill="#fff"/>'};
+function ic(k,s){return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" aria-hidden="true">'+G[k]+'</svg>'}
+function $(i){return document.getElementById(i)}
+function show(v){["loginView","listView","chatView"].forEach(function(x){$(x).classList.toggle("on",x==v)})}
+function pass(){try{return localStorage.getItem("pass")||""}catch(e){return window._p||""}}
+function setPass(v){try{localStorage.setItem("pass",v)}catch(e){window._p=v}}
+function api(url,opt){
+  opt=opt||{};opt.headers=Object.assign({"x-pass":pass(),"Content-Type":"application/json"},opt.headers||{});
+  return fetch(url,opt).then(function(r){
+    if(r.status==401){setPass("");show("loginView");throw new Error("401")}
+    if(!r.ok)throw new Error(r.status);
+    return r.json();
+  });
+}
+function fmt(t){
+  if(!t)return"";var d=new Date(t),n=new Date();
+  return d.toDateString()==n.toDateString()?d.toLocaleTimeString("bn-BD",{hour:"2-digit",minute:"2-digit"}):d.toLocaleDateString("bn-BD",{day:"numeric",month:"short"});
+}
+function dname(c){return c.name||(P[c.platform]+" …"+String(c.cid).slice(-4))}
+var convs=[],f="all",curId=null;
+function tabs(){
+  $("tabs").innerHTML="";
+  Object.keys(P).forEach(function(k){
+    var n=convs.filter(function(c){return k=="all"||c.platform==k}).reduce(function(a,c){return a+c.unread},0);
+    var b=document.createElement("button");
+    b.className="tab"+(f==k?" on":"");
+    b.innerHTML=(k=="all"?"":ic(k,18))+P[k]+(n?" ("+n+")":"");
+    b.onclick=function(){f=k;tabs();list()};
+    $("tabs").appendChild(b);
+  });
+}
+function list(){
+  var L=$("list");L.innerHTML="";
+  var r=convs.filter(function(c){return f=="all"||c.platform==f});
+  if(!r.length){L.innerHTML='<div class="empty">এখানে এখনো কোনো মেসেজ নেই</div>';return}
+  r.forEach(function(c){
+    var d=document.createElement("div");
+    d.className="row"+(c.unread?" unread":"");
+    d.innerHTML='<div class="av"><span class="ini"></span><span class="lg">'+ic(c.platform,20)+'</span></div><div class="meta"><div class="top"><span class="name"></span><span class="time">'+fmt(c.updated)+'</span></div><div class="prev"><span></span>'+(c.unread?'<span class="badge">'+c.unread+'</span>':'')+'</div></div>';
+    d.querySelector(".ini").textContent=dname(c).charAt(0);
+    d.querySelector(".name").textContent=dname(c);
+    d.querySelector(".prev span").textContent=(c.last&&c.last.dir=="out"?"আপনি: ":"")+(c.last?c.last.text:"");
+    d.onclick=function(){openChat(c)};
+    L.appendChild(d);
+  });
+}
+function load(){
+  return api("/api/conversations").then(function(d){convs=d;tabs();list()}).catch(function(){});
+}
+function openChat(c){
+  curId=c.id;
+  $("cname").textContent=dname(c);
+  $("cplat").innerHTML=ic(c.platform,14)+"<span>"+P[c.platform]+" থেকে</span>";
+  show("chatView");refreshChat();
+}
+function refreshChat(){
+  if(!curId)return;
+  api("/api/conversations/"+encodeURIComponent(curId)).then(function(c){
+    var M=$("msgs"),atEnd=M.scrollHeight-M.scrollTop-M.clientHeight<80;
+    M.innerHTML="";
+    c.messages.forEach(function(x){
+      var b=document.createElement("div");b.className="b "+x.dir;b.textContent=x.text;M.appendChild(b);
+    });
+    if(atEnd||!M.dataset.init){M.scrollTop=M.scrollHeight;M.dataset.init=1}
+  }).catch(function(){});
+}
+function send(){
+  var v=$("inp").value.trim();if(!v||!curId)return;
+  $("inp").value="";
+  api("/api/conversations/"+encodeURIComponent(curId)+"/reply",{method:"POST",body:JSON.stringify({text:v})})
+    .then(function(){$("msgs").dataset.init="";refreshChat()})
+    .catch(function(){alert("পাঠানো যায়নি। Meta-র টোকেন বা ২৪ ঘণ্টার নিয়ম দেখো।");$("inp").value=v});
+}
+$("send").onclick=send;
+$("inp").onkeydown=function(e){if(e.key=="Enter")send()};
+$("back").onclick=function(){curId=null;$("msgs").dataset.init="";show("listView");load()};
+function login(){
+  setPass($("pw").value);
+  api("/api/ping").then(function(){$("err").textContent="";start()}).catch(function(){$("err").textContent="পাসওয়ার্ড ঠিক নয়"});
+}
+$("loginBtn").onclick=login;
+$("pw").onkeydown=function(e){if(e.key=="Enter")login()};
+function start(){show("listView");load()}
+setInterval(function(){if(!pass())return;if(curId)refreshChat();else load()},5000);
+if(pass()){api("/api/ping").then(start).catch(function(){})}else{show("loginView")}
+</script>
+</body>
+</html>
